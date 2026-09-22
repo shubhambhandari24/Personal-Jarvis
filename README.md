@@ -6,7 +6,7 @@
 3. Run locally: `npx serve .`
 4. Open the printed localhost URL in Chrome or Edge (mic needs http(s)://, not a raw file:// path).
 
-## n8n setup recap
+## n8n setup recap: 
 - Webhook node: POST, Respond = "Using Respond to Webhook Node", CORS Allowed Origins = * (tighten to your real domain once deployed)
 - AI Agent node: Prompt (User Message) = {{ $json.body.chatInput }}, Session ID = {{ $json.body.sessionId }}
 - Respond to Webhook node: Respond With = JSON, Response Body = {{ JSON.stringify({ reply: $json.output }) }}
