@@ -1,153 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>JARVIS</title>
-<style>
-  :root {
-    --bg: #050810;
-    --panel: #0a0f1a;
-    --cyan: #22d3ee;
-    --cyan-dim: rgba(34, 211, 238, 0.25);
-    --text: #e6f6fb;
-    --text-dim: #7a8a9a;
-    --bubble-user: #131a26;
-    --bubble-jarvis-border: rgba(34, 211, 238, 0.5);
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-  }
-  .logo {
-    color: var(--cyan);
-    font-weight: 700;
-    letter-spacing: 2px;
-    font-size: 18px;
-  }
-  .status-line { font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
-  .status-line::before {
-    content: '';
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #f87171;
-  }
-  .status-line.connected::before { background: #34d399; }
-  .status-line.error::before { background: #f87171; }
-
-  .orb-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 32px 0 8px;
-  }
-  .orb-wrap {
-    width: 140px; height: 140px;
-    border-radius: 50%;
-    border: 1px solid var(--cyan-dim);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    transition: box-shadow 0.3s ease;
-  }
-  .orb-wrap .orb {
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #7dd3fc, var(--cyan) 60%, #0891b2 100%);
-    box-shadow: 0 0 40px var(--cyan-dim);
-  }
-  .orb-wrap.listening { box-shadow: 0 0 0 8px var(--cyan-dim); }
-  .orb-wrap.thinking .orb { animation: pulse 1s infinite ease-in-out; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-  .mic-hint { color: var(--text-dim); font-size: 13px; margin-top: 14px; font-family: monospace; }
-
-  .log {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-  .empty-state { text-align: center; color: var(--text-dim); margin-top: 40px; font-size: 13px; }
-  .entry { max-width: 70%; display: flex; flex-direction: column; gap: 4px; }
-  .entry.user { align-self: flex-end; align-items: flex-end; }
-  .entry.assistant { align-self: flex-start; align-items: flex-start; }
-  .entry .meta { font-size: 11px; color: var(--text-dim); font-family: monospace; }
-  .entry .bubble {
-    padding: 10px 16px;
-    border-radius: 12px;
-    font-size: 15px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-  }
-  .entry.user .bubble { background: var(--bubble-user); }
-  .entry.assistant .bubble { border: 1px solid var(--bubble-jarvis-border); background: rgba(34,211,238,0.05); }
-
-  .input-bar {
-    display: flex;
-    gap: 10px;
-    padding: 16px 24px 24px;
-  }
-  .input-bar input[type="text"] {
-    flex: 1;
-    background: var(--panel);
-    border: 1px solid var(--cyan-dim);
-    border-radius: 999px;
-    padding: 12px 18px;
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-  }
-  .icon-btn {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    border: 1px solid var(--cyan-dim);
-    background: var(--panel);
-    color: var(--cyan);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .icon-btn.active { background: var(--cyan); color: #001018; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#020509" />
+  <title>J.A.R.V.I.S</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<header>
-  <div class="logo">JARVIS</div>
-  <div class="status-line" id="statusLine"><span id="statusText">connecting…</span></div>
+<!-- Animated particle background -->
+<canvas id="bgCanvas"></canvas>
+<!-- CRT scan-line overlay -->
+<div class="scan-overlay"></div>
+
+<div id="app">
+
+  <!-- ── HEADER ───────────────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      J.A.R.V.I.S
+    </div>
+
+    <div class="header-center">
+      <div class="time-display" id="timeDisplay">00:00:00</div>
+      <div class="status-bar">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">INITIALIZING</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="ai-badge">GEMINI · AI</div>
+    </div>
+      <!-- Now Playing bar (shows when music is playing) -->
+    <div class="now-playing-bar" id="nowPlayingBar">
+      <span class="np-icon">🎵</span>
+      <div class="np-info">
+        <span class="np-title" id="npTitle">—</span>
+        <span class="np-sep">·</span>
+        <span class="np-artist" id="npArtist">—</span>
+      </div>
+      <div class="np-btns">
+        <button class="np-btn" id="npPrev"      title="Previous">⏮</button>
+        <button class="np-btn" id="npPlayPause" title="Pause">⏸</button>
+        <button class="np-btn" id="npNext"      title="Next">⏭</button>
+        <button class="np-btn" id="npStop"      title="Stop">⏹</button>
+      </div>
+      <div class="np-track"><div class="np-progress" id="npProgress"></div></div>
+    </div>
 </header>
 
-<div class="orb-section">
-  <div class="orb-wrap" id="orbWrap">
-    <button id="orbBtn" style="all:unset;cursor:pointer;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-      <div class="orb"></div>
-    </button>
+  <!-- ── MAIN LAYOUT ──────────────────────────────────────────── -->
+  <div class="main-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- ORB -->
+      <div class="orb-section">
+        <div class="orb-container" id="orbContainer">
+          <div class="orb-ring ring-1"></div>
+          <div class="orb-ring ring-2"></div>
+          <div class="orb-ring ring-3"></div>
+          <button class="orb-core" id="orbBtn" title="Click to speak">
+            <div class="orb-glare"></div>
+          </button>
+        </div>
+        <div class="orb-hint" id="orbHint">TAP TO SPEAK</div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-actions">
+        <div class="qa-label">QUICK ACCESS</div>
+        <button class="qa-btn" data-app="spotify">
+          <span class="qa-icon">🎵</span><span>Spotify</span>
+        </button>
+        <button class="qa-btn" data-app="whatsapp">
+          <span class="qa-icon">💬</span><span>WhatsApp</span>
+        </button>
+        <button class="qa-btn" data-app="maps">
+          <span class="qa-icon">🗺️</span><span>Maps</span>
+        </button>
+        <button class="qa-btn" data-app="gmail">
+          <span class="qa-icon">📧</span><span>Gmail</span>
+        </button>
+        <button class="qa-btn" data-app="linkedin">
+          <span class="qa-icon">💼</span><span>LinkedIn</span>
+        </button>
+        <button class="qa-btn" data-app="github">
+          <span class="qa-icon">💻</span><span>GitHub</span>
+        </button>
+        <button class="qa-btn" data-app="youtube">
+          <span class="qa-icon">📺</span><span>YouTube</span>
+        </button>
+        <button class="qa-btn" data-english="daily" title="English Practice">
+          <span class="qa-icon">🇬🇧</span><span>English</span>
+        </button>
+        <button class="qa-btn" data-music="index" title="Index Music Folder">
+          <span class="qa-icon">🎵</span><span>My Music</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- CHAT MAIN -->
+    <main class="chat-main">
+
+      <!-- Voice waveform (shown while listening) -->
+      <div class="waveform-container" id="waveformContainer">
+        <div class="waveform" id="waveform"></div>
+        <div class="waveform-label">LISTENING...</div>
+      </div>
+
+      <!-- Chat log -->
+      <div class="chat-log" id="chatLog">
+        <div class="welcome-card" id="welcomeCard">
+          <div class="welcome-icon">⬡</div>
+          <div class="welcome-text" id="welcomeText"></div>
+        </div>
+      </div>
+
+      <!-- Thinking indicator -->
+      <div class="thinking-bar" id="thinkingBar">
+        <span class="thinking-label">JARVIS IS PROCESSING</span>
+        <div class="thinking-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div class="input-area">
+        <div class="input-bar">
+          <span class="input-prefix">&gt;_</span>
+          <input
+            type="text"
+            id="textInput"
+            placeholder="Ask JARVIS anything…"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button class="act-btn mic-btn" id="micBtn" title="Voice input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <button class="act-btn send-btn" id="sendBtn" title="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-footer">
+          <span>SESSION&nbsp;<span id="sessionDisplay">---</span></span>
+          <span id="charCount">0 chars</span>
+        </div>  
+      </div>
+
+    </main>
   </div>
-  <div class="mic-hint" id="micHint">tap the orb and speak, or type below</div>
+  <div class="mobile-nav">
+    <button class="mob-btn" id="mobOrbBtn" title="Speak">🎤</button>
+    <button class="mob-btn" data-app="spotify"   title="Spotify">🎵</button>
+    <button class="mob-btn" data-app="whatsapp"  title="WhatsApp">💬</button>
+    <button class="mob-btn" data-app="maps"      title="Maps">🗺️</button>
+    <button class="mob-btn" data-app="github"    title="GitHub">💻</button>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">CONFIRM ACTION</div>
+    <div class="modal-msg"   id="modalMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-btn yes" id="modalYes">CONFIRM</button>
+      <button class="modal-btn no"  id="modalNo">CANCEL</button>
+    </div>
+  </div>
 </div>
 
-<div class="log" id="log">
-  <div class="empty-state" id="emptyState">Say hello, or ask Jarvis anything.</div>
-</div>
-
-<div class="input-bar">
-  <input type="text" id="textInput" placeholder="Type a message…" />
-  <button class="icon-btn" id="micBtn" title="Speak">🎤</button>
-  <button class="icon-btn" id="sendBtn" title="Send">➤</button>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.7/jsmediatags.min.js"></script>
+<script src="music_player.js"></script>
+<script src="personal_data.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>

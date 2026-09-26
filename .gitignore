@@ -1,2 +1,11 @@
+# PRIVATE - Never push these to GitHub
 config.js
+personal_data.js
+n8n_system_prompt.txt
+
+# Dependencies
 node_modules/
+
+# OS junk
+.DS_Store
+Thumbs.db
